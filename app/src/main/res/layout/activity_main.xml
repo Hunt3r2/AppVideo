@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#859D60"
+    tools:context=".MainActivity">
+
+    <!-- VideoView -->
+    <VideoView
+        android:id="@+id/videoView"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="35dp" />
+
+    <!-- SeekBar -->
+    <SeekBar
+        android:id="@+id/seekBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/videoView"
+        android:layout_marginTop="8dp" />
+
+    <!-- Duración -->
+    <TextView
+        android:id="@+id/duracion"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/seekBar"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:text="00:00 / 00:00"
+        android:textSize="14sp" />
+
+    <!-- LinearLayout para los botones -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/duracion"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <!-- Botón Anterior -->
+        <ImageButton
+            android:id="@+id/anterior"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@android:drawable/ic_media_previous"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <!-- Botón Play/Pause -->
+        <ImageButton
+            android:id="@+id/botonPlay"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@android:drawable/ic_media_play"
+            android:background="?android:attr/selectableItemBackground" />
+
+        <!-- Botón Siguiente -->
+        <ImageButton
+            android:id="@+id/siguiente"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@android:drawable/ic_media_next"
+            android:background="?android:attr/selectableItemBackground" />
+    </LinearLayout>
+
+    <!-- Botón cargar video -->
+    <Button
+        android:id="@+id/cargarVideo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/siguiente"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="16dp"
+        android:text="Cargar Video" />
+
+    <!-- RecyclerView para mostrar los videos -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_below="@id/cargarVideo"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="306dp"
+        android:layout_weight="1" />
+
+</RelativeLayout>
