@@ -28,31 +28,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var cargarVideo: Button
     private val handler = Handler(Looper.getMainLooper())
     private var videoActual = 0
-    private var videos = mutableListOf<Uri>()
+    private val videos = mutableListOf<VideoItem>() // Lista para almacenar URI y nombres de videos
     private lateinit var recyclerView: RecyclerView
 
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            cargarVideoDesdeAlmacenamiento()
-        } else {
-            Toast.makeText(this, "Permiso denegado", Toast.LENGTH_SHORT).show()
-        }
-    }
-
-    private val pickVideoResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == RESULT_OK) {
-            val selectedVideoUri: Uri? = result.data?.data
-            selectedVideoUri?.let {
-                guardarListaDeVideos(it)
-                videos.add(it)
-                recyclerView.adapter?.notifyDataSetChanged()
-                videoActual = videos.size - 1
-                reproducirVideoSeleccionado(it)
-            } ?: run {
-                Toast.makeText(this, "No se seleccionó un video", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
+    data class VideoItem(val uri: Uri, val name: String)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,13 +54,12 @@ class MainActivity : ComponentActivity() {
             }
 
             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
-                val videoUri = videos[position]
-                val videoName = videoUri.lastPathSegment // Obtener el nombre del archivo
+                val videoItem = videos[position]
 
                 val textView = holder.itemView.findViewById<TextView>(R.id.videoName)
-                textView.text = videoName
+                textView.text = videoItem.name
                 holder.itemView.setOnClickListener {
-                    reproducirVideoSeleccionado(videoUri)
+                    reproducirVideoSeleccionado(videoItem.uri)
                 }
             }
 
@@ -94,8 +72,8 @@ class MainActivity : ComponentActivity() {
         cargarListaDeVideosGuardados()
         checkPermissions()
 
-        if (videos.isNotEmpty() && videoActual < videos.size) {
-            reproducirVideoSeleccionado(videos[videoActual])
+        if (videos.isNotEmpty()) {
+            reproducirVideoSeleccionado(videos[videoActual].uri)
         }
 
         botonPlay.setOnClickListener {
@@ -148,9 +126,9 @@ class MainActivity : ComponentActivity() {
             // Reproducir el video seleccionado
             videoView.setVideoURI(videoUri)
             // Mostrar el nombre del video seleccionado
-            val videoName = videoUri.lastPathSegment
+            val videoName = videoUri.lastPathSegment ?: "Video desconocido"
             val textView = findViewById<TextView>(R.id.videoName)
-            textView.text = videoName
+            textView.text = videoName // Actualizamos el nombre del video en la interfaz
         }
 
         videoView.setOnPreparedListener {
@@ -160,13 +138,14 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+
     private fun cargarVideoDesdeAlmacenamiento() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
         intent.type = "video/*"
-        pickVideoResultLauncher.launch(intent)
+        startActivityForResult(intent, PICK_VIDEO_REQUEST)
     }
 
-    private fun guardarListaDeVideos(videoUri: Uri) {
+    private fun guardarListaDeVideos(videoUri: Uri, videoName: String) {
         val sharedPreferences = getSharedPreferences("VideoPrefs", MODE_PRIVATE)
         val editor = sharedPreferences.edit()
 
@@ -180,7 +159,27 @@ class MainActivity : ComponentActivity() {
     private fun cargarListaDeVideosGuardados() {
         val sharedPreferences = getSharedPreferences("VideoPrefs", MODE_PRIVATE)
         val videoUris = sharedPreferences.getStringSet("videoList", mutableSetOf()) ?: mutableSetOf()
-        videos = videoUris.map { Uri.parse(it) }.toMutableList() // Convierte los Strings en Uris
+        videos.clear()
+        for (uriStr in videoUris) {
+            val uri = Uri.parse(uriStr)
+            val videoName = uri.lastPathSegment ?: "Video desconocido"
+            videos.add(VideoItem(uri, videoName)) // Almacena el URI y nombre del video
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == PICK_VIDEO_REQUEST && resultCode == RESULT_OK && data != null) {
+            val selectedVideoUri: Uri? = data.data
+            selectedVideoUri?.let {
+                val videoName = it.lastPathSegment ?: "Nuevo video"
+                guardarListaDeVideos(it, videoName)
+                videos.add(VideoItem(it, videoName))
+                recyclerView.adapter?.notifyDataSetChanged() // Notificar al adapter
+                videoActual = videos.size - 1 // Reproducir el nuevo video agregado
+                reproducirVideoSeleccionado(it)
+            }
+        }
     }
 
     private fun reproducirVideo() {
@@ -198,9 +197,8 @@ class MainActivity : ComponentActivity() {
     private fun siguienteVideo() {
         if (videos.isNotEmpty()) {
             videoActual = if (videoActual < videos.size - 1) videoActual + 1 else 0
-            reproducirVideoSeleccionado(videos[videoActual])
+            reproducirVideoSeleccionado(videos[videoActual].uri)
         } else {
-            // Si la lista de videos está vacía, no hacer nada o mostrar un mensaje
             Toast.makeText(this, "No hay videos para reproducir", Toast.LENGTH_SHORT).show()
         }
     }
@@ -208,9 +206,8 @@ class MainActivity : ComponentActivity() {
     private fun anteriorVideo() {
         if (videos.isNotEmpty()) {
             videoActual = if (videoActual > 0) videoActual - 1 else videos.size - 1
-            reproducirVideoSeleccionado(videos[videoActual])
+            reproducirVideoSeleccionado(videos[videoActual].uri)
         } else {
-            // Si la lista de videos está vacía, no hacer nada o mostrar un mensaje
             Toast.makeText(this, "No hay videos para reproducir", Toast.LENGTH_SHORT).show()
         }
     }
@@ -242,6 +239,14 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         } else {
             cargarVideoDesdeAlmacenamiento()
+        }
+    }
+
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            cargarVideoDesdeAlmacenamiento()
+        } else {
+            Toast.makeText(this, "Permiso denegado", Toast.LENGTH_SHORT).show()
         }
     }
 
