@@ -31,6 +31,29 @@ class MainActivity : ComponentActivity() {
     private var videos = mutableListOf<Uri>()
     private lateinit var recyclerView: RecyclerView
 
+    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+            cargarVideoDesdeAlmacenamiento()
+        } else {
+            Toast.makeText(this, "Permiso denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val pickVideoResultLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val selectedVideoUri: Uri? = result.data?.data
+            selectedVideoUri?.let {
+                guardarListaDeVideos(it)
+                videos.add(it)
+                recyclerView.adapter?.notifyDataSetChanged()
+                videoActual = videos.size - 1
+                reproducirVideoSeleccionado(it)
+            } ?: run {
+                Toast.makeText(this, "No se seleccionó un video", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -45,15 +68,12 @@ class MainActivity : ComponentActivity() {
         cargarVideo = findViewById(R.id.cargarVideo)
         recyclerView = findViewById(R.id.recyclerView)
 
-        // Inicializar RecyclerView
         val videoAdapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-            // Crear una vista para cada ítem
             override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): RecyclerView.ViewHolder {
                 val view = layoutInflater.inflate(R.layout.item_video, parent, false)
                 return object : RecyclerView.ViewHolder(view) {}
             }
 
-            // Establecer los datos en la vista
             override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
                 val videoUri = videos[position]
                 val videoName = videoUri.lastPathSegment // Obtener el nombre del archivo
@@ -65,7 +85,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
 
-            // Contar el número de elementos en la lista
             override fun getItemCount(): Int = videos.size
         }
 
@@ -75,11 +94,10 @@ class MainActivity : ComponentActivity() {
         cargarListaDeVideosGuardados()
         checkPermissions()
 
-        if (videos.isNotEmpty()) {
+        if (videos.isNotEmpty() && videoActual < videos.size) {
             reproducirVideoSeleccionado(videos[videoActual])
         }
 
-        // Botón play/pause
         botonPlay.setOnClickListener {
             if (isPlaying) {
                 pausarVideo()
@@ -88,17 +106,14 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Botón siguiente
         siguiente.setOnClickListener {
             siguienteVideo()
         }
 
-        // Botón anterior
         anterior.setOnClickListener {
             anteriorVideo()
         }
 
-        // Control del SeekBar
         barra.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
@@ -119,19 +134,36 @@ class MainActivity : ComponentActivity() {
         handler.postDelayed(updateProgressTask, 1000)
     }
 
-    private fun reproducirVideoSeleccionado(videoUri: Uri) {
-        videoView.setVideoURI(videoUri)
+    private fun reproducirVideoSeleccionado(videoUri: Uri?) {
+        if (videoUri == null) {
+            // Si no hay video seleccionado, usar el video por defecto de la carpeta raw
+            val videoId = R.raw.video1 // Nombre del archivo sin la extensión
+            val uri = Uri.parse("android.resource://${packageName}/$videoId")
+            videoView.setVideoURI(uri)
+            // Mostrar el nombre del video por defecto
+            val videoName = "Video por defecto" // Puedes asignar el nombre que desees
+            val textView = findViewById<TextView>(R.id.videoName)
+            textView.text = videoName
+        } else {
+            // Reproducir el video seleccionado
+            videoView.setVideoURI(videoUri)
+            // Mostrar el nombre del video seleccionado
+            val videoName = videoUri.lastPathSegment
+            val textView = findViewById<TextView>(R.id.videoName)
+            textView.text = videoName
+        }
+
         videoView.setOnPreparedListener {
             barra.max = videoView.duration
             actualizarTiempo()
-            reproducirVideo()
+            reproducirVideo() // Solo se debe llamar después de la preparación del video
         }
     }
 
     private fun cargarVideoDesdeAlmacenamiento() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
         intent.type = "video/*"
-        startActivityForResult(intent, PICK_VIDEO_REQUEST)
+        pickVideoResultLauncher.launch(intent)
     }
 
     private fun guardarListaDeVideos(videoUri: Uri) {
@@ -151,19 +183,6 @@ class MainActivity : ComponentActivity() {
         videos = videoUris.map { Uri.parse(it) }.toMutableList() // Convierte los Strings en Uris
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_VIDEO_REQUEST && resultCode == RESULT_OK && data != null) {
-            val selectedVideoUri: Uri? = data.data
-            selectedVideoUri?.let {
-                guardarListaDeVideos(it)
-                videos.add(it)
-                recyclerView.adapter?.notifyDataSetChanged() // Notificar al adapter
-                reproducirVideoSeleccionado(it)
-            }
-        }
-    }
-
     private fun reproducirVideo() {
         videoView.start()
         botonPlay.setImageResource(android.R.drawable.ic_media_pause)
@@ -177,13 +196,23 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun siguienteVideo() {
-        videoActual = if (videoActual < videos.size - 1) videoActual + 1 else 0
-        reproducirVideoSeleccionado(videos[videoActual])
+        if (videos.isNotEmpty()) {
+            videoActual = if (videoActual < videos.size - 1) videoActual + 1 else 0
+            reproducirVideoSeleccionado(videos[videoActual])
+        } else {
+            // Si la lista de videos está vacía, no hacer nada o mostrar un mensaje
+            Toast.makeText(this, "No hay videos para reproducir", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun anteriorVideo() {
-        videoActual = if (videoActual > 0) videoActual - 1 else videos.size - 1
-        reproducirVideoSeleccionado(videos[videoActual])
+        if (videos.isNotEmpty()) {
+            videoActual = if (videoActual > 0) videoActual - 1 else videos.size - 1
+            reproducirVideoSeleccionado(videos[videoActual])
+        } else {
+            // Si la lista de videos está vacía, no hacer nada o mostrar un mensaje
+            Toast.makeText(this, "No hay videos para reproducir", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private val updateProgressTask = object : Runnable {
@@ -213,14 +242,6 @@ class MainActivity : ComponentActivity() {
             requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         } else {
             cargarVideoDesdeAlmacenamiento()
-        }
-    }
-
-    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) {
-            cargarVideoDesdeAlmacenamiento()
-        } else {
-            Toast.makeText(this, "Permiso denegado", Toast.LENGTH_SHORT).show()
         }
     }
 
