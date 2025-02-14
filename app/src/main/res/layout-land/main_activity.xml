@@ -1,0 +1,49 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#859D60"
+    tools:context=".MainActivity">
+
+    <!-- VideoView para pantalla completa en modo landscape -->
+    <VideoView
+        android:id="@+id/videoView"
+        android:layout_width="match_parent"
+        android:layout_height="326dp"
+        android:layout_alignParentTop="true"
+        android:layout_marginTop="0dp" />
+
+    <!-- Resto de la interfaz, adaptada a landscape -->
+    <!-- Por ejemplo, podrías mover los controles o cambiar el tamaño de los botones -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/videoView"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/anterior"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@android:drawable/ic_media_previous" />
+
+        <ImageButton
+            android:id="@+id/botonPlay"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@android:drawable/ic_media_play" />
+
+        <ImageButton
+            android:id="@+id/siguiente"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:src="@android:drawable/ic_media_next" />
+    </LinearLayout>
+
+    <!-- Resto de elementos como la duración, etc. -->
+</RelativeLayout>
