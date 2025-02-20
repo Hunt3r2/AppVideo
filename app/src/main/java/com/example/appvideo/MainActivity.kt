@@ -3,11 +3,13 @@ package com.example.appvideo
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.MediaStore
+import android.util.Log
 import android.widget.*
 import androidx.activity.ComponentActivity
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,6 +33,7 @@ class MainActivity : ComponentActivity() {
     private val videos = mutableListOf<VideoItem>() // Lista para almacenar URI y nombres de videos
     private lateinit var recyclerView: RecyclerView
 
+
     data class VideoItem(val uri: Uri, val name: String)
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -46,6 +49,11 @@ class MainActivity : ComponentActivity() {
         siguiente = findViewById(R.id.siguiente)
         cargarVideo = findViewById(R.id.cargarVideo)
         recyclerView = findViewById(R.id.recyclerView)
+
+        if (videoView == null || botonPlay == null || duracion == null || duracion == null) {
+            Log.e("MainActivity", "Algunos elementos no fueron encontrados.")
+        }
+
 
         val videoAdapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -222,6 +230,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            // Realiza las modificaciones necesarias para el landscape
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
+            // Realiza las modificaciones necesarias para el portrait
+        }
+    }
+
     private fun actualizarTiempo() {
         val currentTime = tiempo(videoView.currentPosition)
         val totalTime = tiempo(videoView.duration)
@@ -247,6 +264,39 @@ class MainActivity : ComponentActivity() {
             cargarVideoDesdeAlmacenamiento()
         } else {
             Toast.makeText(this, "Permiso denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Variables para controlar la visibilidad de los botones
+    private val fadeOutHandler = Handler(Looper.getMainLooper())
+    private val fadeOutRunnable = object : Runnable {
+        override fun run() {
+            // Desvanecer los botones y la barra
+            botonPlay.animate().alpha(0f).setDuration(500).start()
+            duracion.animate().alpha(0f).setDuration(500).start()
+            barra.animate().alpha(0f).setDuration(500).start()
+            anterior.animate().alpha(0f).setDuration(500).start()
+            siguiente.animate().alpha(0f).setDuration(500).start()
+            cargarVideo.animate().alpha(0f).setDuration(500).start()
+        }
+    }
+
+    private fun setupTouchListener() {
+        // Volver a mostrar los botones al tocar la pantalla
+        findViewById<LinearLayout>(R.id.botonesLayout).setOnTouchListener { _, _ ->
+            // Hacer que los botones y la barra vuelvan a ser visibles
+            botonPlay.animate().alpha(1f).setDuration(500).start()
+            duracion.animate().alpha(1f).setDuration(500).start()
+            barra.animate().alpha(1f).setDuration(500).start()
+            anterior.animate().alpha(1f).setDuration(500).start()
+            siguiente.animate().alpha(1f).setDuration(500).start()
+            cargarVideo.animate().alpha(1f).setDuration(500).start()
+
+            // Volver a iniciar el fade out después de 3 segundos
+            fadeOutHandler.removeCallbacks(fadeOutRunnable)
+            fadeOutHandler.postDelayed(fadeOutRunnable, 3000)
+
+            true
         }
     }
 
