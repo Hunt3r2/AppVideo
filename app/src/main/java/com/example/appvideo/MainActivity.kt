@@ -3,7 +3,6 @@ package com.example.appvideo
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
@@ -19,10 +18,10 @@ import androidx.recyclerview.widget.RecyclerView
 
 class MainActivity : ComponentActivity() {
 
-    private val PICK_VIDEO_REQUEST = 1
+    private val video_seleccionado = 1
     private lateinit var videoView: VideoView
     private lateinit var botonPlay: ImageButton
-    private var isPlaying = false
+    private var estaPuesto = false
     private lateinit var duracion: TextView
     private lateinit var barra: SeekBar
     private lateinit var anterior: ImageButton
@@ -85,7 +84,7 @@ class MainActivity : ComponentActivity() {
         }
 
         botonPlay.setOnClickListener {
-            if (isPlaying) {
+            if (estaPuesto) {
                 pausarVideo()
             } else {
                 reproducirVideo()
@@ -122,27 +121,25 @@ class MainActivity : ComponentActivity() {
 
     private fun reproducirVideoSeleccionado(videoUri: Uri?) {
         if (videoUri == null) {
-            // Si no hay video seleccionado, usar el video por defecto de la carpeta raw
-            val videoId = R.raw.video1 // Nombre del archivo sin la extensión
+            val videoId = R.raw.video1
             val uri = Uri.parse("android.resource://${packageName}/$videoId")
             videoView.setVideoURI(uri)
-            // Mostrar el nombre del video por defecto
-            val videoName = "Video por defecto" // Puedes asignar el nombre que desees
+            val videoName = "Video por defecto"
             val textView = findViewById<TextView>(R.id.videoName)
             textView.text = videoName
         } else {
-            // Reproducir el video seleccionado
+            //reproducir el video seleccionado
             videoView.setVideoURI(videoUri)
-            // Mostrar el nombre del video seleccionado
+            //mostrar el nombre del video seleccionado
             val videoName = videoUri.lastPathSegment ?: "Video desconocido"
             val textView = findViewById<TextView>(R.id.videoName)
-            textView.text = videoName // Actualizamos el nombre del video en la interfaz
+            textView.text = videoName
         }
 
         videoView.setOnPreparedListener {
             barra.max = videoView.duration
             actualizarTiempo()
-            reproducirVideo() // Solo se debe llamar después de la preparación del video
+            reproducirVideo()
         }
     }
 
@@ -150,7 +147,7 @@ class MainActivity : ComponentActivity() {
     private fun cargarVideoDesdeAlmacenamiento() {
         val intent = Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
         intent.type = "video/*"
-        startActivityForResult(intent, PICK_VIDEO_REQUEST)
+        startActivityForResult(intent, video_seleccionado)
     }
 
     private fun guardarListaDeVideos(videoUri: Uri, videoName: String) {
@@ -171,20 +168,20 @@ class MainActivity : ComponentActivity() {
         for (uriStr in videoUris) {
             val uri = Uri.parse(uriStr)
             val videoName = uri.lastPathSegment ?: "Video desconocido"
-            videos.add(VideoItem(uri, videoName)) // Almacena el URI y nombre del video
+            videos.add(VideoItem(uri, videoName))
         }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == PICK_VIDEO_REQUEST && resultCode == RESULT_OK && data != null) {
+        if (requestCode == video_seleccionado && resultCode == RESULT_OK && data != null) {
             val selectedVideoUri: Uri? = data.data
             selectedVideoUri?.let {
                 val videoName = it.lastPathSegment ?: "Nuevo video"
                 guardarListaDeVideos(it, videoName)
                 videos.add(VideoItem(it, videoName))
-                recyclerView.adapter?.notifyDataSetChanged() // Notificar al adapter
-                videoActual = videos.size - 1 // Reproducir el nuevo video agregado
+                recyclerView.adapter?.notifyDataSetChanged()
+                videoActual = videos.size - 1
                 reproducirVideoSeleccionado(it)
             }
         }
@@ -193,13 +190,13 @@ class MainActivity : ComponentActivity() {
     private fun reproducirVideo() {
         videoView.start()
         botonPlay.setImageResource(android.R.drawable.ic_media_pause)
-        isPlaying = true
+        estaPuesto = true
     }
 
     private fun pausarVideo() {
         videoView.pause()
         botonPlay.setImageResource(android.R.drawable.ic_media_play)
-        isPlaying = false
+        estaPuesto = false
     }
 
     private fun siguienteVideo() {
@@ -227,15 +224,6 @@ class MainActivity : ComponentActivity() {
                 actualizarTiempo()
             }
             handler.postDelayed(this, 1000)
-        }
-    }
-
-    override fun onConfigurationChanged(newConfig: Configuration) {
-        super.onConfigurationChanged(newConfig)
-        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // Realiza las modificaciones necesarias para el landscape
-        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT) {
-            // Realiza las modificaciones necesarias para el portrait
         }
     }
 
@@ -267,38 +255,28 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // Variables para controlar la visibilidad de los botones
-    private val fadeOutHandler = Handler(Looper.getMainLooper())
-    private val fadeOutRunnable = object : Runnable {
-        override fun run() {
-            // Desvanecer los botones y la barra
-            botonPlay.animate().alpha(0f).setDuration(500).start()
-            duracion.animate().alpha(0f).setDuration(500).start()
-            barra.animate().alpha(0f).setDuration(500).start()
-            anterior.animate().alpha(0f).setDuration(500).start()
-            siguiente.animate().alpha(0f).setDuration(500).start()
-            cargarVideo.animate().alpha(0f).setDuration(500).start()
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt("videoPosition", videoView.currentPosition)
+        outState.putBoolean("isPlaying", estaPuesto)
+        outState.putInt("videoActual", videoActual)
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        val videoPosition = savedInstanceState.getInt("videoPosition", 0)
+        estaPuesto = savedInstanceState.getBoolean("isPlaying", false)
+        videoActual = savedInstanceState.getInt("videoActual", 0)
+
+        if (videoPosition > 0) {
+            videoView.seekTo(videoPosition)
+        }
+        if (estaPuesto) {
+            videoView.start()
+            botonPlay.setImageResource(android.R.drawable.ic_media_pause)
         }
     }
 
-    private fun setupTouchListener() {
-        // Volver a mostrar los botones al tocar la pantalla
-        findViewById<LinearLayout>(R.id.botonesLayout).setOnTouchListener { _, _ ->
-            // Hacer que los botones y la barra vuelvan a ser visibles
-            botonPlay.animate().alpha(1f).setDuration(500).start()
-            duracion.animate().alpha(1f).setDuration(500).start()
-            barra.animate().alpha(1f).setDuration(500).start()
-            anterior.animate().alpha(1f).setDuration(500).start()
-            siguiente.animate().alpha(1f).setDuration(500).start()
-            cargarVideo.animate().alpha(1f).setDuration(500).start()
-
-            // Volver a iniciar el fade out después de 3 segundos
-            fadeOutHandler.removeCallbacks(fadeOutRunnable)
-            fadeOutHandler.postDelayed(fadeOutRunnable, 3000)
-
-            true
-        }
-    }
 
     override fun onDestroy() {
         super.onDestroy()
