@@ -5,7 +5,6 @@
     android:background="#859D60"
     tools:context=".MainActivity">
 
-    <!-- VideoView -->
     <VideoView
         android:id="@+id/videoView"
         android:layout_width="match_parent"
@@ -22,7 +21,6 @@
         android:textSize="20sp"
         android:textStyle="bold" />
 
-    <!-- SeekBar -->
     <SeekBar
         android:id="@+id/seekBar"
         android:layout_width="match_parent"
@@ -30,7 +28,6 @@
         android:layout_below="@id/videoView"
         android:layout_marginTop="8dp" />
 
-    <!-- Duración -->
     <TextView
         android:id="@+id/duracion"
         android:layout_width="wrap_content"
@@ -41,7 +38,6 @@
         android:text="00:00 / 00:00"
         android:textSize="14sp" />
 
-    <!-- LinearLayout para los botones -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -51,7 +47,6 @@
         android:orientation="horizontal"
         android:id="@+id/botonesLayout">
 
-        <!-- Botón Anterior -->
         <ImageButton
             android:id="@+id/anterior"
             android:layout_width="50dp"
@@ -59,7 +54,6 @@
             android:background="?android:attr/selectableItemBackground"
             android:src="@android:drawable/ic_media_previous" />
 
-        <!-- Botón Play/Pause -->
         <ImageButton
             android:id="@+id/botonPlay"
             android:layout_width="50dp"
@@ -67,7 +61,6 @@
             android:background="?android:attr/selectableItemBackground"
             android:src="@android:drawable/ic_media_play" />
 
-        <!-- Botón Siguiente -->
         <ImageButton
             android:id="@+id/siguiente"
             android:layout_width="50dp"
@@ -76,7 +69,6 @@
             android:src="@android:drawable/ic_media_next" />
     </LinearLayout>
 
-    <!-- Botón cargar video -->
     <Button
         android:id="@+id/cargarVideo"
         android:layout_width="wrap_content"
@@ -87,7 +79,6 @@
         android:text="Cargar Video"
         tools:ignore="NotSibling" />
 
-    <!-- RecyclerView para mostrar los videos -->
     <ScrollView
         android:layout_width="400dp"
         android:layout_height="140dp"

@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var cargarVideo: Button
     private val handler = Handler(Looper.getMainLooper())
     private var videoActual = 0
-    private val videos = mutableListOf<VideoItem>() // Lista para almacenar URI y nombres de videos
+    private val videos = mutableListOf<VideoItem>()
     private lateinit var recyclerView: RecyclerView
 
 
@@ -39,7 +39,6 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Inicializar UI
         videoView = findViewById(R.id.videoView)
         botonPlay = findViewById(R.id.botonPlay)
         duracion = findViewById(R.id.duracion)
@@ -52,7 +51,6 @@ class MainActivity : ComponentActivity() {
         if (videoView == null || botonPlay == null || duracion == null || duracion == null) {
             Log.e("MainActivity", "Algunos elementos no fueron encontrados.")
         }
-
 
         val videoAdapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
             override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -111,7 +109,6 @@ class MainActivity : ComponentActivity() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        // Botón cargar video
         cargarVideo.setOnClickListener {
             cargarVideoDesdeAlmacenamiento()
         }
@@ -258,25 +255,32 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt("videoPosition", videoView.currentPosition)
-        outState.putBoolean("isPlaying", estaPuesto)
+        outState.putBoolean("estaPuesto", estaPuesto)
         outState.putInt("videoActual", videoActual)
+        outState.putString("videoUri", videos[videoActual].uri.toString())
     }
+
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
         super.onRestoreInstanceState(savedInstanceState)
         val videoPosition = savedInstanceState.getInt("videoPosition", 0)
-        estaPuesto = savedInstanceState.getBoolean("isPlaying", false)
+        estaPuesto = savedInstanceState.getBoolean("estaPuesto", false)
         videoActual = savedInstanceState.getInt("videoActual", 0)
+        val videoUriString = savedInstanceState.getString("videoUri")
 
-        if (videoPosition > 0) {
-            videoView.seekTo(videoPosition)
+        if (videoUriString != null) {
+            val videoUri = Uri.parse(videoUriString)
+            reproducirVideoSeleccionado(videoUri)
+            if (videoPosition > 0) {
+                videoView.seekTo(videoPosition)
+            }
         }
+
         if (estaPuesto) {
             videoView.start()
             botonPlay.setImageResource(android.R.drawable.ic_media_pause)
         }
     }
-
 
     override fun onDestroy() {
         super.onDestroy()
