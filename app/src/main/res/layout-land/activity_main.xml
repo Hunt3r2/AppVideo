@@ -5,10 +5,6 @@
     android:background="#000000"
     tools:context=".MainActivity">
 
-    <!-- VideoView -->
-
-    <!-- SeekBar -->
-
     <VideoView
         android:id="@+id/videoView"
         android:layout_width="match_parent"
@@ -16,7 +12,6 @@
         android:layout_alignParentTop="true"
         android:layout_marginTop="-1dp" />
 
-    <!-- Duración -->
 
     <SeekBar
         android:id="@+id/seekBar"
@@ -35,7 +30,6 @@
         android:text="00:00 / 00:00"
         android:textSize="14sp" />
 
-    <!-- LinearLayout para los botones -->
     <LinearLayout
         android:id="@+id/botonesLayout"
         android:layout_width="155dp"
@@ -45,7 +39,6 @@
         android:layout_marginTop="-11dp"
         android:orientation="horizontal">
 
-        <!-- Botón Anterior -->
         <ImageButton
             android:id="@+id/anterior"
             android:layout_width="50dp"
@@ -53,7 +46,6 @@
             android:background="?android:attr/selectableItemBackground"
             android:src="@android:drawable/ic_media_previous" />
 
-        <!-- Botón Play/Pause -->
         <ImageButton
             android:id="@+id/botonPlay"
             android:layout_width="50dp"
@@ -61,7 +53,6 @@
             android:background="?android:attr/selectableItemBackground"
             android:src="@android:drawable/ic_media_play" />
 
-        <!-- Botón Siguiente -->
         <ImageButton
             android:id="@+id/siguiente"
             android:layout_width="50dp"
@@ -70,7 +61,6 @@
             android:src="@android:drawable/ic_media_next" />
     </LinearLayout>
 
-    <!-- Botón cargar video -->
     <Button
         android:id="@+id/cargarVideo"
         android:layout_width="wrap_content"
@@ -81,7 +71,6 @@
         android:text="Cargar Video"
         tools:ignore="NotSibling" />
 
-    <!-- RecyclerView para mostrar los videos -->
     <ScrollView
         android:layout_width="0dp"
         android:layout_height="0dp"
